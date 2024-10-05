@@ -6,6 +6,8 @@ interface PokemonCardProps {
     id: number;
     name: string;
     types: string[];
+    encountered: boolean;
+    caught: boolean;
   };
 }
 
@@ -13,7 +15,21 @@ const PokemonCard = ({ pokemon }: PokemonCardProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{pokemon.name}</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          {pokemon.name}
+          <div className="flex space-x-1">
+            {pokemon.encountered && (
+              <span className="mr-2 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                Encountered
+              </span>
+            )}
+            {pokemon.caught && (
+              <span className="mr-2 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                Caught
+              </span>
+            )}
+          </div>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <img

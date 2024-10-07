@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { usePokemon } from '@/context/PokemonContext';
 
 interface PokemonDetails {
   id: number;
@@ -25,12 +26,11 @@ interface PokemonDetails {
   };
 }
 
-export default function PokemonDetails({ id }: { id: string }) {
+export default function PokemonDetails({ id }: { id: number }) {
   const [pokemon, setPokemon] = useState<PokemonDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [encountered, setEncountered] = useState(false);
-  const [caught, setCaught] = useState(false);
+  const { markAsEncountered, markAsCaught, removeEncountered, removeCaught, isEncountered, isCaught } = usePokemon();
 
   useEffect(() => {
     const fetchPokemonDetails = async () => {
@@ -77,6 +77,22 @@ export default function PokemonDetails({ id }: { id: string }) {
     }
   }, [id]);
 
+  const handleEncountered = () => {
+    if (isEncountered(Number(id))) {
+      removeEncountered(Number(id));
+    } else {
+      markAsEncountered(Number(id));
+    }
+  };
+
+  const handleCaptured = () => {
+    if (isCaught(Number(id))) {
+      removeCaught(Number(id));
+    } else {
+      markAsCaught(Number(id));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -84,24 +100,6 @@ export default function PokemonDetails({ id }: { id: string }) {
       </div>
     );
   }
-
-  const handleEncountered = () => {
-    const encounteredPokemon = JSON.parse(localStorage.getItem('encounteredPokemon') || '[]');
-    if (!encounteredPokemon.includes(pokemon?.id)) {
-      encounteredPokemon.push(pokemon?.id);
-      localStorage.setItem('encounteredPokemon', JSON.stringify(encounteredPokemon));
-      setEncountered(true);
-    }
-  };
-
-  const handleCaught = () => {
-    const caughtPokemon = JSON.parse(localStorage.getItem('caughtPokemon') || '[]');
-    if (!caughtPokemon.includes(pokemon?.id)) {
-      caughtPokemon.push(pokemon?.id);
-      localStorage.setItem('caughtPokemon', JSON.stringify(caughtPokemon));
-      setCaught(true);
-    }
-  };
 
   if (error || !pokemon) {
     return <div className="text-center text-red-500">{error || 'Pokemon not found'}</div>;
@@ -135,15 +133,11 @@ export default function PokemonDetails({ id }: { id: string }) {
                 ))}
               </div>
               <div className="mt-4 flex justify-center space-x-2">
-                <Button
-                  onClick={handleEncountered}
-                  disabled={encountered}
-                  variant={encountered ? 'outline' : 'default'}
-                >
-                  {encountered ? 'Encountered' : 'Mark as Encountered'}
+                <Button onClick={() => handleEncountered()} variant="default">
+                  {isEncountered(Number(id)) ? 'Remove from Encountered' : 'Mark as Encountered'}
                 </Button>
-                <Button onClick={handleCaught} disabled={caught} variant={caught ? 'outline' : 'default'}>
-                  {caught ? 'Caught' : 'Mark as Caught'}
+                <Button onClick={() => handleCaptured()} variant="default">
+                  {isCaught(Number(id)) ? 'Remove from Caught' : 'Mark as Caught'}
                 </Button>
               </div>
             </div>

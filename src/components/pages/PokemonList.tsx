@@ -3,71 +3,55 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import PokemonCard from './partials/PokemonCard';
-
 import { Loader2 } from 'lucide-react';
-import { Pokemon } from '@/types/Pokemon';
+import { Pokemon, PokemonListItem } from '@/types/Pokemon';
 import SearchBar from './partials/SearchBar';
 import { fetchPokemons, fetchPokemonDetails } from '@/services/pokemon';
 import Link from 'next/link';
+import { usePokemon } from '@/context/PokemonContext';
 
 export default function PokemonList() {
+  const [isReady, setIsReady] = useState(false);
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
-  const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [page, setPage] = useState(1);
-  const [encounteredPokemon, setEncounteredPokemon] = useState<number[]>([]);
-  const [caughtPokemon, setCaughtPokemon] = useState<number[]>([]);
-  const pokemonPerPage = 21;
+  const [pokemonList, setPokemonList] = useState<PokemonListItem>({} as PokemonListItem);
+  const { isEncountered, isCaught } = usePokemon();
+
+  const fetchPokemon = async (url: string) => {
+    try {
+      setLoading(true);
+      const fetchData = await fetchPokemons(url);
+      setPokemonList(fetchData);
+
+      const pokemonWithDetails = await Promise.all(
+        fetchData.results.map(async (pokemon: { url: string }) => {
+          const data = await fetchPokemonDetails(pokemon.url);
+          return { ...data, isEncountered: isEncountered(data.id), isCaught: isCaught(data.id) };
+        })
+      );
+      setPokemons(pokemonWithDetails);
+    } catch (error) {
+      console.error(error);
+      setError('Failed to fetch Pokemon');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPokemon = async () => {
-      try {
-        setLoading(true);
-        const results = await fetchPokemons();
-        const pokemonWithDetails = await Promise.all(
-          results.map(async (pokemon: { name: string; url: string }, index: number) => {
-            const detailData = await fetchPokemonDetails(pokemon.url);
-            return {
-              name: pokemon.name,
-              url: pokemon.url,
-              id: index + 1,
-              types: detailData.types.map((type: { type: { name: string } }) => type.type.name)
-            };
-          })
-        );
-        setPokemons(pokemonWithDetails);
-        setFilteredPokemon(pokemonWithDetails);
-
-        const encounteredPokemon = JSON.parse(localStorage.getItem('encounteredPokemon') || '[]');
-        const caughtPokemon = JSON.parse(localStorage.getItem('caughtPokemon') || '[]');
-        setEncounteredPokemon(encounteredPokemon);
-        setCaughtPokemon(caughtPokemon);
-      } catch (error) {
-        console.error(error);
-        setError('Failed to fetch Pokemon');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPokemon();
-  }, []);
+    setIsReady(true);
+  }, [isEncountered, isCaught]);
 
   useEffect(() => {
-    const filtered = pokemons.filter(
-      (p) =>
-        p.name.toLowerCase().includes(search.toLowerCase()) && (typeFilter === 'all' || p.types.includes(typeFilter))
-    );
-    setFilteredPokemon(filtered);
-    setPage(1);
-  }, [search, typeFilter, pokemons]);
+    if (isReady) {
+      fetchPokemon(`https://pokeapi.co/api/v2/pokemon?limit=100&offset=0`);
+    }
+  }, [isReady]);
 
   const types = Array.from(new Set(pokemons.flatMap((p) => p.types)));
-
-  const paginatedPokemon = filteredPokemon.slice((page - 1) * pokemonPerPage, page * pokemonPerPage);
 
   if (loading) {
     return (
@@ -83,7 +67,12 @@ export default function PokemonList() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="mb-4 text-3xl font-bold">Pokémon List</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Pokedex</h1>
+        <Link href="/trainer/collection" className="text-blue-500 hover:underline">
+          My Pokémons
+        </Link>
+      </div>
       <SearchBar
         search={search}
         setSearch={setSearch}
@@ -92,21 +81,23 @@ export default function PokemonList() {
         types={types}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        {paginatedPokemon.map((p) => {
-          const encountered = encounteredPokemon.includes(p.id);
-          const caught = caughtPokemon.includes(p.id);
-          return (
-            <Link href={`/pokemon/${p.id}`} key={p.id}>
-              <PokemonCard pokemon={{ ...p, encountered, caught }} />
-            </Link>
-          );
-        })}
+        {pokemons.map((p) => (
+          <Link href={`/pokemon/${p.id}`} key={p.id}>
+            <PokemonCard
+              id={p.id}
+              name={p.name}
+              types={p.types}
+              isEncountered={p.isEncountered ?? false}
+              isCaught={p.isCaught ?? false}
+            />
+          </Link>
+        ))}
       </div>
       <div className="mt-4 flex justify-center gap-2">
-        <Button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1}>
+        <Button onClick={() => fetchPokemon(pokemonList.previous)} disabled={!pokemonList.previous}>
           Previous
         </Button>
-        <Button onClick={() => setPage((prev) => prev + 1)} disabled={page * pokemonPerPage >= filteredPokemon.length}>
+        <Button onClick={() => fetchPokemon(pokemonList.next)} disabled={!pokemonList.next}>
           Next
         </Button>
       </div>

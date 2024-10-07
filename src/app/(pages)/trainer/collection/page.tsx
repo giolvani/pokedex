@@ -1,3 +1,5 @@
+import PokemonCollection from '@/components/pages/PokemonCollection';
+
 export default function Page() {
-  return <div>Trainer Collection</div>;
+  return <PokemonCollection />;
 }

@@ -18,7 +18,7 @@ const SearchBar = ({ search, setSearch, typeFilter, setTypeFilter, types }: Sear
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
       />
-      <Select value={typeFilter} onValueChange={setTypeFilter}>
+      {/* <Select value={typeFilter} onValueChange={setTypeFilter}>
         <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Filter by type" />
         </SelectTrigger>
@@ -30,7 +30,7 @@ const SearchBar = ({ search, setSearch, typeFilter, setTypeFilter, types }: Sear
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </Select> */}
     </div>
   );
 };

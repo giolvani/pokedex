@@ -10,22 +10,7 @@
     "extraFileExtensions": [".json"]
   },
   "rules": {
-    "react/jsx-filename-extension": "off",
-    "no-param-reassign": "off",
-    "react/prop-types": "off",
-    "react/require-default-props": "off",
-    "react/no-array-index-key": "off",
-    "react/react-in-jsx-scope": "off",
-    "react/jsx-props-no-spreading": "off",
-    "import/order": "off",
-    "no-console": "warn",
-    "no-shadow": "off",
-    "@typescript-eslint/naming-convention": "off",
-    "import/no-cycle": "off",
-    "prefer-destructuring": "off",
-    "import/no-extraneous-dependencies": "off",
-    "react/display-name": "off",
-    "import/no-unresolved": ["off", { "caseSensitive": false }]
+    "no-console": "warn"
   },
   "prettier/prettier": [
     "error",

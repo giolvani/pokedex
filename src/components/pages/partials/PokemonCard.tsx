@@ -13,20 +13,20 @@ interface BasePokemonCardProps {
 
 type InteractivePokemonCardProps = BasePokemonCardProps & {
   interactive: boolean;
-  onRemoveEncountered: (id: number) => void;
-  onRemoveCaught: (id: number) => void;
+  onRemoveEncountered: () => void;
+  onRemoveCaught: () => void;
 };
 
 interface NonInteractivePokemonCardProps extends BasePokemonCardProps {
   interactive?: false;
-  onRemoveEncountered?: (id: number) => void;
-  onRemoveCaught?: (id: number) => void;
+  onRemoveEncountered?: () => void;
+  onRemoveCaught?: () => void;
 }
 
 type PokemonCardProps = InteractivePokemonCardProps | NonInteractivePokemonCardProps;
 
 const PokemonCard = (props: PokemonCardProps) => {
-  const { id, name, types, isEncountered, isCaught, interactive } = props;
+  const { id, name, types, isEncountered, isCaught, interactive, onRemoveEncountered, onRemoveCaught } = props;
   return (
     <Card>
       <CardHeader>
@@ -70,12 +70,7 @@ const PokemonCard = (props: PokemonCardProps) => {
               {isEncountered && (
                 <span className="flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
                   Encountered
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-1 h-4 w-4 p-0"
-                    onClick={() => props.onRemoveEncountered(id)}
-                  >
+                  <Button variant="ghost" size="sm" className="ml-1 h-4 w-4 p-0" onClick={onRemoveEncountered}>
                     <X className="h-3 w-3" />
                   </Button>
                 </span>
@@ -83,12 +78,7 @@ const PokemonCard = (props: PokemonCardProps) => {
               {isCaught && (
                 <span className="flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                   Caught
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="ml-1 h-4 w-4 p-0"
-                    onClick={() => props.onRemoveCaught(id)}
-                  >
+                  <Button variant="ghost" size="sm" className="ml-1 h-4 w-4 p-0" onClick={onRemoveCaught}>
                     <X className="h-3 w-3" />
                   </Button>
                 </span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import PokemonCard from './partials/PokemonCard';
 import { Pokemon } from '@/types/Pokemon';
@@ -19,12 +19,12 @@ export default function PokemonList() {
   const [isReady, setIsReady] = useState(false);
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [pokemonList, setPokemonList] = useState<PokemonPaginatedList>({} as PokemonPaginatedList);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
+  // const [search, setSearch] = useState('');
+  // const [typeFilter, setTypeFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchPokemon = async (url: string) => {
+  const fetchPokemon = useCallback(async (url: string) => {
     try {
       setLoading(true);
       const listData = await fetchData(url, listParser);
@@ -39,24 +39,27 @@ export default function PokemonList() {
       setPokemonList(listData);
       setPokemons(pokemonWithDetails);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       setError('Failed to fetch Pokemon');
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setIsReady(true);
-  }, [isEncountered, isCaught]);
+  }, []);
 
   useEffect(() => {
     if (isReady) {
       fetchPokemon(`https://pokeapi.co/api/v2/pokemon?limit=100&offset=0`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady]);
 
-  const types = Array.from(new Set(pokemons.flatMap((p) => p.types)));
+  // const types = Array.from(new Set(pokemons.flatMap((p) => p.types)));
 
   if (loading) {
     return <Loading />;
@@ -75,11 +78,11 @@ export default function PokemonList() {
         </Link>
       </div>
       <SearchBar
-        search={search}
-        setSearch={setSearch}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
-        types={types}
+      // search={search}
+      // setSearch={setSearch}
+      // typeFilter={typeFilter}
+      // setTypeFilter={setTypeFilter}
+      // types={types}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {pokemons.map((p) => (

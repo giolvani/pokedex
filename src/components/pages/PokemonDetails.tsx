@@ -1,6 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -17,41 +18,44 @@ export default function PokemonDetails({ id }: { id: number }) {
   const [error, setError] = useState('');
   const { markAsEncountered, markAsCaught, removeEncountered, removeCaught, isEncountered, isCaught } = usePokemon();
 
+  const fetchPokemon = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const pokemonData: any = await fetchData(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      const description: any = await fetchData(pokemonData.species.url, pokemonDescriptionParser);
+      const pokemon = pokemonParser(pokemonData, description);
+      setPokemon(pokemon);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(err);
+      setError('Failed to fetch Pokemon details');
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
-    const fetchPokemon = async () => {
-      try {
-        setLoading(true);
-
-        const pokemonData: any = await fetchData(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const description: any = await fetchData(pokemonData.species.url, pokemonDescriptionParser);
-        const pokemon = pokemonParser(pokemonData, description);
-        setPokemon(pokemon);
-      } catch (err) {
-        console.error(err);
-        setError('Failed to fetch Pokemon details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (id) {
       fetchPokemon();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleEncountered = () => {
-    if (isEncountered(Number(id))) {
-      removeEncountered(Number(id));
+  const handleEncountered = (id: number) => {
+    if (isEncountered(id)) {
+      removeEncountered(id);
     } else {
-      markAsEncountered(Number(id));
+      markAsEncountered(id);
     }
   };
 
-  const handleCaptured = () => {
-    if (isCaught(Number(id))) {
-      removeCaught(Number(id));
+  const handleCaptured = (id: number) => {
+    if (isCaught(id)) {
+      removeCaught(id);
     } else {
-      markAsCaught(Number(id));
+      markAsCaught(id);
     }
   };
 
@@ -87,11 +91,11 @@ export default function PokemonDetails({ id }: { id: number }) {
                 ))}
               </div>
               <div className="mt-4 flex justify-center space-x-2">
-                <Button onClick={() => handleEncountered()} variant="default">
-                  {isEncountered(Number(id)) ? 'Remove from Encountered' : 'Mark as Encountered'}
+                <Button onClick={() => handleEncountered(id)} variant="default">
+                  {isEncountered(id) ? 'Remove from Encountered' : 'Mark as Encountered'}
                 </Button>
-                <Button onClick={() => handleCaptured()} variant="default">
-                  {isCaught(Number(id)) ? 'Remove from Caught' : 'Mark as Caught'}
+                <Button onClick={() => handleCaptured(id)} variant="default">
+                  {isCaught(id) ? 'Remove from Caught' : 'Mark as Caught'}
                 </Button>
               </div>
             </div>

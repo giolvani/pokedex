@@ -1,21 +1,21 @@
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface SearchBarProps {
-  search: string;
-  setSearch: (value: string) => void;
-  typeFilter: string;
-  setTypeFilter: (value: string) => void;
-  types: string[];
-}
+// interface SearchBarProps {
+//   search: string;
+//   setSearch: (value: string) => void;
+//   typeFilter: string;
+//   setTypeFilter: (value: string) => void;
+//   types: string[];
+// }
 
-const SearchBar = ({ search, setSearch, typeFilter, setTypeFilter, types }: SearchBarProps) => {
+const SearchBar = (/*{ search, setSearch, typeFilter, setTypeFilter, types }: SearchBarProps*/) => {
   return (
     <div className="mb-4 flex gap-4">
       <Input
         placeholder="Search Pokémon..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        // value={search}
+        // onChange={(e) => setSearch(e.target.value)}
         className="max-w-sm"
       />
       {/* <Select value={typeFilter} onValueChange={setTypeFilter}>

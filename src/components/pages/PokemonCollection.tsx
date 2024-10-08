@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
@@ -12,38 +12,48 @@ import { Loading } from './partials/Loading';
 import { pokemonParser } from '@/services/parser/pokemon';
 
 export default function PokemonCollection() {
+  const { isEncountered, isCaught, removeEncountered, removeCaught, encounteredPokemon, caughtPokemon } = usePokemon();
+
+  const [isReady, setIsReady] = useState(false);
   const [myPokemon, setMyPokemon] = useState<Pokemon[]>([]);
   const [filteredPokemon, setFilteredPokemon] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
-  const { isEncountered, isCaught, removeEncountered, removeCaught, encounteredPokemon, caughtPokemon } = usePokemon();
+
+  const fetchMyPokemon = useCallback(async () => {
+    try {
+      setLoading(true);
+      const allMyPokemonIds = Array.from(new Set([...encounteredPokemon, ...caughtPokemon]));
+
+      const pokemonDetails = await Promise.all(
+        allMyPokemonIds.map(async (id: number) => {
+          const data = await fetchData(`https://pokeapi.co/api/v2/pokemon/${id}`, pokemonParser);
+          return { ...data, isEncountered: isEncountered(data.id), isCaught: isCaught(data.id) };
+        })
+      );
+
+      setMyPokemon(pokemonDetails);
+      setFilteredPokemon(pokemonDetails);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(err);
+      setError('Failed to fetch your Pokemon');
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, encounteredPokemon, caughtPokemon]);
 
   useEffect(() => {
-    const fetchMyPokemon = async () => {
-      try {
-        setLoading(true);
-        const allMyPokemonIds = Array.from(new Set([...encounteredPokemon, ...caughtPokemon]));
+    setIsReady(true);
+  }, []);
 
-        const pokemonDetails = await Promise.all(
-          allMyPokemonIds.map(async (id: number) => {
-            const data = await fetchData(`https://pokeapi.co/api/v2/pokemon/${id}`, pokemonParser);
-            return { ...data, isEncountered: isEncountered(data.id), isCaught: isCaught(data.id) };
-          })
-        );
-
-        setMyPokemon(pokemonDetails);
-        setFilteredPokemon(pokemonDetails);
-      } catch (err) {
-        setError('Failed to fetch your Pokemon');
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchMyPokemon();
-  }, [encounteredPokemon, caughtPokemon]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady, encounteredPokemon, caughtPokemon]);
 
   useEffect(() => {
     const filtered = myPokemon.filter(
@@ -60,7 +70,6 @@ export default function PokemonCollection() {
     } else {
       removeCaught(id);
     }
-    setMyPokemon((prevPokemon) => prevPokemon.filter((p) => p.id !== id));
   };
 
   if (loading) {

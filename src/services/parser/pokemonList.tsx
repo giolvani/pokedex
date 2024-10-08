@@ -1,4 +1,4 @@
-import { PokemonPaginatedList } from '@/types/Pokemon';
+import { PokemonPaginatedList } from '@/types/PokemonPaginatedList';
 
 export const listParser = (data: any): PokemonPaginatedList => {
   return {

@@ -2,70 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { usePokemon } from '@/context/PokemonContext';
-
-interface PokemonDetails {
-  id: number;
-  name: string;
-  types: string[];
-  height: number;
-  weight: number;
-  abilities: string[];
-  stats: { name: string; value: number }[];
-  sprites: {
-    front_default: string;
-    back_default: string;
-    front_shiny: string;
-    back_shiny: string;
-  };
-  species: {
-    flavor_text: string;
-  };
-}
+import { fetchData } from '@/services/pokemon';
+import { pokemonParser } from '@/services/parser/pokemon';
+import { Pokemon } from '@/types/Pokemon';
+import { Loading } from './partials/Loading';
+import { pokemonDescriptionParser } from '@/services/parser/pokemonDescription';
 
 export default function PokemonDetails({ id }: { id: number }) {
-  const [pokemon, setPokemon] = useState<PokemonDetails | null>(null);
+  const [pokemon, setPokemon] = useState<Pokemon | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { markAsEncountered, markAsCaught, removeEncountered, removeCaught, isEncountered, isCaught } = usePokemon();
 
   useEffect(() => {
-    const fetchPokemonDetails = async () => {
+    const fetchPokemon = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const data = await response.json();
-        const speciesResponse = await fetch(data.species.url);
-        const speciesData = await speciesResponse.json();
 
-        setPokemon({
-          id: data.id,
-          name: data.name,
-          types: data.types.map((type: { type: { name: string } }) => type.type.name),
-          height: data.height,
-          weight: data.weight,
-          abilities: data.abilities.map((ability: { ability: { name: string } }) => ability.ability.name),
-          stats: data.stats.map((stat: { base_stat: number; stat: { name: string } }) => ({
-            name: stat.stat.name,
-            value: stat.base_stat
-          })),
-          sprites: {
-            front_default: data.sprites.front_default,
-            back_default: data.sprites.back_default,
-            front_shiny: data.sprites.front_shiny,
-            back_shiny: data.sprites.back_shiny
-          },
-          species: {
-            flavor_text:
-              speciesData.flavor_text_entries.find(
-                (entry: { language: { name: string } }) => entry.language.name === 'en'
-              )?.flavor_text || 'No description available.'
-          }
-        });
+        const pokemonData: any = await fetchData(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const description: any = await fetchData(pokemonData.species.url, pokemonDescriptionParser);
+        const pokemon = pokemonParser(pokemonData, description);
+        setPokemon(pokemon);
       } catch (err) {
+        console.error(err);
         setError('Failed to fetch Pokemon details');
       } finally {
         setLoading(false);
@@ -73,7 +35,7 @@ export default function PokemonDetails({ id }: { id: number }) {
     };
 
     if (id) {
-      fetchPokemonDetails();
+      fetchPokemon();
     }
   }, [id]);
 
@@ -94,11 +56,7 @@ export default function PokemonDetails({ id }: { id: number }) {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error || !pokemon) {
@@ -117,11 +75,7 @@ export default function PokemonDetails({ id }: { id: number }) {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <img
-                src={pokemon.sprites.front_default}
-                alt={`${pokemon.name} front view`}
-                className="mx-auto h-48 w-48"
-              />
+              <img src={pokemon.mainImage} alt={`${pokemon.name} front view`} className="mx-auto h-48 w-48" />
               <div className="mt-4 text-center">
                 {pokemon.types.map((type) => (
                   <span
@@ -142,7 +96,7 @@ export default function PokemonDetails({ id }: { id: number }) {
               </div>
             </div>
             <div>
-              <p className="mb-2 text-lg">{pokemon.species.flavor_text}</p>
+              <p className="mb-2 text-lg">{pokemon.description}</p>
               <p>
                 <strong>Height:</strong> {pokemon.height / 10} m
               </p>

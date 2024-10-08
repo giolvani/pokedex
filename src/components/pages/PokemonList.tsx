@@ -3,35 +3,40 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import PokemonCard from './partials/PokemonCard';
-import { Loader2 } from 'lucide-react';
-import { Pokemon, PokemonListItem } from '@/types/Pokemon';
+import { Pokemon } from '@/types/Pokemon';
 import SearchBar from './partials/SearchBar';
-import { fetchPokemons, fetchPokemonDetails } from '@/services/pokemon';
+import { fetchData } from '@/services/pokemon';
 import Link from 'next/link';
 import { usePokemon } from '@/context/PokemonContext';
+import { Loading } from './partials/Loading';
+import { pokemonParser } from '@/services/parser/pokemon';
+import { listParser } from '@/services/parser/pokemonList';
+import { PokemonPaginatedList } from '@/types/PokemonPaginatedList';
 
 export default function PokemonList() {
+  const { isEncountered, isCaught } = usePokemon();
+
   const [isReady, setIsReady] = useState(false);
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
+  const [pokemonList, setPokemonList] = useState<PokemonPaginatedList>({} as PokemonPaginatedList);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [pokemonList, setPokemonList] = useState<PokemonListItem>({} as PokemonListItem);
-  const { isEncountered, isCaught } = usePokemon();
 
   const fetchPokemon = async (url: string) => {
     try {
       setLoading(true);
-      const fetchData = await fetchPokemons(url);
-      setPokemonList(fetchData);
+      const listData = await fetchData(url, listParser);
 
       const pokemonWithDetails = await Promise.all(
-        fetchData.results.map(async (pokemon: { url: string }) => {
-          const data = await fetchPokemonDetails(pokemon.url);
+        listData.results.map(async (pokemon: { url: string }) => {
+          const data = await fetchData(pokemon.url, pokemonParser);
           return { ...data, isEncountered: isEncountered(data.id), isCaught: isCaught(data.id) };
         })
       );
+
+      setPokemonList(listData);
       setPokemons(pokemonWithDetails);
     } catch (error) {
       console.error(error);
@@ -54,11 +59,7 @@ export default function PokemonList() {
   const types = Array.from(new Set(pokemons.flatMap((p) => p.types)));
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error) {
@@ -84,6 +85,7 @@ export default function PokemonList() {
         {pokemons.map((p) => (
           <Link href={`/pokemon/${p.id}`} key={p.id}>
             <PokemonCard
+              key={p.id}
               id={p.id}
               name={p.name}
               types={p.types}

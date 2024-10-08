@@ -1,19 +1,16 @@
-import { Pokemon, PokemonListItem } from '@/types/Pokemon';
+const cache: { [key: string]: any } = {};
 
-export const fetchPokemons = async (url: string): Promise<PokemonListItem> => {
-  const response = await fetch(url);
-  const { count, next, previous, results } = await response.json();
-  return { count, next, previous, results } as PokemonListItem;
-};
+export const fetchData = async <T>(url: string, parser?: (data: any) => T): Promise<T> => {
+  const normalizedUrl = url.endsWith('/') ? url.slice(0, -1) : url;
 
-export const fetchPokemonDetails = async (url: string) => {
+  if (cache[normalizedUrl]) {
+    return parser ? parser(cache[normalizedUrl]) : cache[normalizedUrl];
+  }
+
   const response = await fetch(url);
   const data = await response.json();
-  return {
-    id: data.id,
-    name: data.name,
-    types: data.types.map((type: { type: { name: string } }) => type.type.name),
-    image: data.sprites.front_default
-    // images: [data.sprites.front_default, data.sprites.back_default, data.sprites.front_shiny, data.sprites.back_shiny]
-  } as Pokemon;
+  cache[normalizedUrl] = data;
+
+  const result = parser ? parser(data) : data;
+  return result;
 };

@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import PokemonCard from './partials/PokemonCard';
 import { usePokemon } from '@/context/PokemonContext';
-import { fetchPokemonDetails } from '@/services/pokemon';
+import { fetchData } from '@/services/pokemon';
 import { Pokemon } from '@/types/Pokemon';
+import { Loading } from './partials/Loading';
+import { pokemonParser } from '@/services/parser/pokemon';
 
 export default function PokemonCollection() {
   const [myPokemon, setMyPokemon] = useState<Pokemon[]>([]);
@@ -27,7 +28,7 @@ export default function PokemonCollection() {
 
         const pokemonDetails = await Promise.all(
           allMyPokemonIds.map(async (id: number) => {
-            const data = await fetchPokemonDetails(`https://pokeapi.co/api/v2/pokemon/${id}`);
+            const data = await fetchData(`https://pokeapi.co/api/v2/pokemon/${id}`, pokemonParser);
             return { ...data, isEncountered: isEncountered(data.id), isCaught: isCaught(data.id) };
           })
         );
@@ -63,11 +64,7 @@ export default function PokemonCollection() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error) {

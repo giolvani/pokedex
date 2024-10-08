@@ -1,5 +1,5 @@
 import PokemonDetails from '@/components/pages/PokemonDetails';
 
 export default function Page({ params }: { params: { id: string } }) {
-  return <PokemonDetails id={params.id} />;
+  return <PokemonDetails id={parseInt(params.id)} />;
 }

@@ -1,64 +1,68 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import PokemonCard from './partials/PokemonCard';
-import { Loader2 } from 'lucide-react';
-import { Pokemon, PokemonListItem } from '@/types/Pokemon';
+import { Pokemon } from '@/types/Pokemon';
 import SearchBar from './partials/SearchBar';
-import { fetchPokemons, fetchPokemonDetails } from '@/services/pokemon';
+import { fetchData } from '@/services/pokemon';
 import Link from 'next/link';
 import { usePokemon } from '@/context/PokemonContext';
+import { Loading } from './partials/Loading';
+import { pokemonParser } from '@/services/parser/pokemon';
+import { listParser } from '@/services/parser/pokemonList';
+import { PokemonPaginatedList } from '@/types/PokemonPaginatedList';
 
 export default function PokemonList() {
-  const [isReady, setIsReady] = useState(false);
-  const [pokemons, setPokemons] = useState<Pokemon[]>([]);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [pokemonList, setPokemonList] = useState<PokemonListItem>({} as PokemonListItem);
   const { isEncountered, isCaught } = usePokemon();
 
-  const fetchPokemon = async (url: string) => {
+  const [isReady, setIsReady] = useState(false);
+  const [pokemons, setPokemons] = useState<Pokemon[]>([]);
+  const [pokemonList, setPokemonList] = useState<PokemonPaginatedList>({} as PokemonPaginatedList);
+  // const [search, setSearch] = useState('');
+  // const [typeFilter, setTypeFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchPokemon = useCallback(async (url: string) => {
     try {
       setLoading(true);
-      const fetchData = await fetchPokemons(url);
-      setPokemonList(fetchData);
+      const listData = await fetchData(url, listParser);
 
       const pokemonWithDetails = await Promise.all(
-        fetchData.results.map(async (pokemon: { url: string }) => {
-          const data = await fetchPokemonDetails(pokemon.url);
+        listData.results.map(async (pokemon: { url: string }) => {
+          const data = await fetchData(pokemon.url, pokemonParser);
           return { ...data, isEncountered: isEncountered(data.id), isCaught: isCaught(data.id) };
         })
       );
+
+      setPokemonList(listData);
       setPokemons(pokemonWithDetails);
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       setError('Failed to fetch Pokemon');
     } finally {
       setLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setIsReady(true);
-  }, [isEncountered, isCaught]);
+  }, []);
 
   useEffect(() => {
     if (isReady) {
       fetchPokemon(`https://pokeapi.co/api/v2/pokemon?limit=100&offset=0`);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isReady]);
 
-  const types = Array.from(new Set(pokemons.flatMap((p) => p.types)));
+  // const types = Array.from(new Set(pokemons.flatMap((p) => p.types)));
 
   if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <Loading />;
   }
 
   if (error) {
@@ -74,16 +78,17 @@ export default function PokemonList() {
         </Link>
       </div>
       <SearchBar
-        search={search}
-        setSearch={setSearch}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
-        types={types}
+      // search={search}
+      // setSearch={setSearch}
+      // typeFilter={typeFilter}
+      // setTypeFilter={setTypeFilter}
+      // types={types}
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         {pokemons.map((p) => (
           <Link href={`/pokemon/${p.id}`} key={p.id}>
             <PokemonCard
+              key={p.id}
               id={p.id}
               name={p.name}
               types={p.types}
